@@ -1,0 +1,506 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.project.doctor_fish_back.repository.admin.AdminReservationMapper">
+
+    <resultMap id="adminReservationResultMap" type="com.project.doctor_fish_back.entity.Reservation">
+        <id property="id" column="rt_id" />
+        <result property="userId" column="rt_user_id" />
+        <result property="status" column="status" />
+        <result property="reservationDate" column="reservation_date" />
+        <result property="registerDate" column="register_date" />
+        <association property="user" resultMap="userResultMap" />
+    </resultMap>
+
+    <resultMap id="reservationResultMap" type="com.project.doctor_fish_back.entity.Reservation">
+        <id property="id" column="rt_id" />
+        <result property="userId" column="rt_user_id" />
+        <result property="doctorId" column="doctor_id" />
+        <result property="status" column="status" />
+        <result property="reservationDate" column="reservation_date" />
+        <result property="registerDate" column="register_date" />
+        <association property="doctor" resultMap="doctorResultMap" />
+    </resultMap>
+
+    <resultMap id="doctorResultMap" type="com.project.doctor_fish_back.entity.Doctor">
+        <id property="id" column="dot_id" />
+        <result property="userId" column="dot_user_id" />
+        <result property="departId" column="depart_id" />
+        <result property="comment" column="comment" />
+        <result property="record" column="record" />
+        <association property="user" resultMap="userResultMap"/>
+        <association property="depart" resultMap="departResultMap"/>
+    </resultMap>
+
+    <resultMap id="userResultMap" type="com.project.doctor_fish_back.entity.User">
+        <id property="id" column="ut_id" />
+        <result property="email" column="email" />
+        <result property="name" column="ut_name" />
+        <result property="password" column="password" />
+        <result property="phoneNumber" column="phone_number" />
+        <result property="img" column="ut_img" />
+        <result property="emailValid" column="email_valid" />
+        <result property="registerDate" column="ut_register_date" />
+        <result property="updateDate" column="ut_update_date" />
+    </resultMap>
+
+    <resultMap id="departResultMap" type="com.project.doctor_fish_back.entity.Depart">
+        <id property="id" column="det_id" />
+        <result property="name" column="det_name" />
+    </resultMap>
+
+    <resultMap id="monthCountsByDoctors" type="java.util.HashMap">
+        <id property="doctorId" column="doctor_id" />
+        <result property="name" column="name" />
+        <collection property="counts" javaType="java.util.ArrayList" ofType="java.util.HashMap">
+            <id property="month" column="month" />
+            <result property="count" column="count" />
+        </collection>
+    </resultMap>
+
+    <resultMap id="weekReservationCountMap" type="java.util.HashMap">
+        <result property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="count" column="count"/>
+    </resultMap>
+
+    <resultMap id="monthReservationCountMap" type="java.util.HashMap">
+        <result property="id" column="id"/>
+        <result property="count" column="count"/>
+    </resultMap>
+
+    <update id="acceptById">
+        update reservation_tb
+        set
+            status = 2
+        where
+            id = #{id}
+    </update>
+
+    <update id="cancelById">
+        update reservation_tb
+        set
+            status = 3
+        where
+            id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        delete
+        from
+            reservation_tb
+        where
+            id = #{id}
+    </delete>
+
+    <select id="findById" resultMap="reservationResultMap">
+        select
+            rt.id as rt_id,
+            rt.user_id as rt_user_id,
+            rt.doctor_id,
+            rt.status,
+            rt.reservation_date,
+            rt.register_date,
+            dot.id as dot_id,
+            dot.user_id as dot_user_id,
+            dot.depart_id,
+            dot.comment,
+            dot.record,
+            ut.id as ut_id,
+            ut.email,
+            ut.name as ut_name,
+            ut.password,
+            ut.phone_number,
+            ut.img as ut_img,
+            ut.email_valid,
+            ut.register_date as ut_register_date,
+            ut.update_date as ut_update_date,
+            det.id as det_id,
+            det.name as det_name
+        from
+            reservation_tb rt
+            left outer join doctor_tb dot on(rt.doctor_id = dot.id)
+            left outer join user_tb ut on(dot.user_id = ut.id)
+            left outer join depart_tb det on(dot.depart_id = det.id)
+        where
+            rt.id = #{id}
+    </select>
+
+    <select id="reservationList" resultMap="adminReservationResultMap">
+        select
+            rt.id as rt_id,
+            rt.user_id as rt_user_id,
+            rt.status,
+            rt.reservation_date,
+            rt.register_date,
+            ut.id as ut_id,
+            ut.email,
+            ut.name as ut_name,
+            ut.password,
+            ut.phone_number,
+            ut.img as ut_img,
+            ut.email_valid,
+            ut.register_date as ut_register_date,
+            ut.update_date as ut_update_date
+        from
+            reservation_tb rt
+            left outer join user_tb ut on(rt.user_id = ut.id)
+        where
+            ut.name like concat("%", #{searchText}, "%")
+        order by
+            rt.reservation_date desc
+        limit #{startIndex}, #{limit}
+    </select>
+
+    <select id="reservationListByDoctorId" resultMap="adminReservationResultMap">
+        select
+            rt.id as rt_id,
+            rt.user_id as rt_user_id,
+            rt.status,
+            rt.reservation_date,
+            rt.register_date,
+            ut.id as ut_id,
+            ut.email,
+            ut.name as ut_name,
+            ut.password,
+            ut.phone_number,
+            ut.img as ut_img,
+            ut.email_valid,
+            ut.register_date as ut_register_date,
+            ut.update_date as ut_update_date
+        from
+            reservation_tb rt
+            left outer join user_tb ut on(rt.user_id = ut.id)
+        where
+            rt.doctor_id = #{doctorId}
+            and ut.name like concat("%", #{searchText}, "%")
+        order by
+            rt.reservation_date desc
+        limit #{startIndex}, #{limit}
+    </select>
+
+    <select id="todayReservationList" resultMap="adminReservationResultMap">
+        select
+            rt.id as rt_id,
+            rt.user_id as rt_user_id,
+            rt.status,
+            rt.reservation_date,
+            rt.register_date,
+            ut.id as ut_id,
+            ut.email,
+            ut.name as ut_name,
+            ut.password,
+            ut.phone_number,
+            ut.img as ut_img,
+            ut.email_valid,
+            ut.register_date as ut_register_date,
+            ut.update_date as ut_update_date
+        from
+            reservation_tb rt
+            left outer join user_tb ut on(rt.user_id = ut.id)
+        where
+            DATE(reservation_date) = DATE(NOW())
+            and ut.name like concat("%", #{searchText}, "%")
+        order by
+            rt.reservation_date desc
+        limit #{startIndex}, #{limit}
+    </select>
+
+    <select id="todayReservationListByDoctorId" resultMap="adminReservationResultMap">
+        select
+            rt.id as rt_id,
+            rt.user_id as rt_user_id,
+            rt.status,
+            rt.reservation_date,
+            rt.register_date,
+            ut.id as ut_id,
+            ut.email,
+            ut.name as ut_name,
+            ut.password,
+            ut.phone_number,
+            ut.img as ut_img,
+            ut.email_valid,
+            ut.register_date as ut_register_date,
+            ut.update_date as ut_update_date
+        from
+            reservation_tb rt
+            left outer join user_tb ut on(rt.user_id = ut.id)
+        where
+            rt.doctor_id = #{doctorId} and DATE(reservation_date) = DATE(NOW())
+            and ut.name like concat("%", #{searchText}, "%")
+        order by
+            rt.reservation_date desc
+        limit #{startIndex}, #{limit}
+    </select>
+
+    <select id="reservationsCount" resultType="java.lang.Long">
+        select
+            count(*)
+        from
+            reservation_tb rt
+            left outer join user_tb ut on(rt.user_id = ut.id)
+        where
+            ut.name like concat("%", #{searchText}, "%")
+    </select>
+
+    <select id="todayReservationsCount" resultType="java.lang.Long">
+        select
+            count(*)
+        from
+            reservation_tb rt
+            left outer join user_tb ut on(rt.user_id = ut.id)
+        where
+            DATE(reservation_date) = DATE(NOW())
+            and ut.name like concat("%", #{searchText}, "%")
+    </select>
+
+    <select id="reservationsCountByDoctorId" resultType="java.lang.Long">
+        select
+            count(*)
+        from
+            reservation_tb rt
+            left outer join user_tb ut on(rt.user_id = ut.id)
+        where
+            doctor_id = #{doctorId}
+            and ut.name like concat("%", #{searchText}, "%")
+    </select>
+
+    <select id="todayReservationsCountByDoctorId" resultType="java.lang.Long">
+        select
+            count(*)
+        from
+            reservation_tb rt
+            left outer join user_tb ut on(rt.user_id = ut.id)
+        where
+            doctor_id = #{doctorId} and DATE(reservation_date) = DATE(NOW())
+            and ut.name like concat("%", #{searchText}, "%")
+    </select>
+
+    <select id="reservationListByLimit" resultMap="adminReservationResultMap">
+        select
+            rt.id as rt_id,
+            rt.user_id as rt_user_id,
+            rt.status,
+            rt.reservation_date,
+            rt.register_date,
+            ut.id as ut_id,
+            ut.email,
+            ut.name as ut_name,
+            ut.password,
+            ut.phone_number,
+            ut.img as ut_img,
+            ut.email_valid,
+            ut.register_date as ut_register_date,
+            ut.update_date as ut_update_date
+        from
+            reservation_tb rt
+            left outer join user_tb ut on(rt.user_id = ut.id)
+        order by
+            rt.reservation_date desc
+        limit 0, #{limit}
+    </select>
+
+    <select id="todayReservationListByLimit" resultMap="adminReservationResultMap">
+        select
+            rt.id as rt_id,
+            rt.user_id as rt_user_id,
+            rt.status,
+            rt.reservation_date,
+            rt.register_date,
+            ut.id as ut_id,
+            ut.email,
+            ut.name as ut_name,
+            ut.password,
+            ut.phone_number,
+            ut.img as ut_img,
+            ut.email_valid,
+            ut.register_date as ut_register_date,
+            ut.update_date as ut_update_date
+        from
+            reservation_tb rt
+            left outer join user_tb ut on(rt.user_id = ut.id)
+        where
+            DATE(reservation_date) = DATE(NOW())
+        order by
+            rt.reservation_date desc
+        limit 0, #{limit}
+    </select>
+
+    <select id="reservationListByLimitAndDoctorId" resultMap="adminReservationResultMap">
+        select
+            rt.id as rt_id,
+            rt.user_id as rt_user_id,
+            rt.status,
+            rt.reservation_date,
+            rt.register_date,
+            ut.id as ut_id,
+            ut.email,
+            ut.name as ut_name,
+            ut.password,
+            ut.phone_number,
+            ut.img as ut_img,
+            ut.email_valid,
+            ut.register_date as ut_register_date,
+            ut.update_date as ut_update_date
+        from
+            reservation_tb rt
+            left outer join user_tb ut on(rt.user_id = ut.id)
+        where
+            rt.doctor_id = #{doctorId}
+        order by
+            rt.reservation_date desc
+        limit 0, #{limit}
+    </select>
+
+    <select id="todayReservationListByLimitAndDoctorId" resultMap="adminReservationResultMap">
+        select
+            rt.id as rt_id,
+            rt.user_id as rt_user_id,
+            rt.status,
+            rt.reservation_date,
+            rt.register_date,
+            ut.id as ut_id,
+            ut.email,
+            ut.name as ut_name,
+            ut.password,
+            ut.phone_number,
+            ut.img as ut_img,
+            ut.email_valid,
+            ut.register_date as ut_register_date,
+            ut.update_date as ut_update_date
+        from
+            reservation_tb rt
+            left outer join user_tb ut on(rt.user_id = ut.id)
+        where
+            rt.doctor_id = #{doctorId} and DATE(reservation_date) = DATE(NOW())
+        order by
+            rt.reservation_date desc
+        limit 0, #{limit}
+    </select>
+
+    <select id="monthReservationsCountByDoctorIds" resultMap="monthCountsByDoctors">
+        select
+            dt.id as doctor_id,
+            ut.name,
+            mt.id as month,
+            ifnull(count, 0) as count
+        from
+            doctor_tb dt
+            join month_tb mt
+            left outer join (select
+                                substr(reservation_date, 6, 2) as id,
+                                doctor_id,
+                                count(*) as count
+                            from
+                                reservation_tb
+                            where
+                                year(reservation_date) = #{year}
+                            group by
+                                doctor_id,
+                                substr(reservation_date, 6, 2)
+                            order by
+                                doctor_id) rt on(rt.id = mt.id and dt.id = rt.doctor_id)
+            left outer join user_tb ut on(ut.id = dt.user_id)
+        order by
+            doctor_id,
+            month
+    </select>
+
+    <select id="monthReservationsCountByDoctorId" resultMap="monthCountsByDoctors">
+        select
+            dt.id as doctor_id,
+            ut.name,
+            mt.id as month,
+            ifnull(count, 0) as count
+        from
+            doctor_tb dt
+            join month_tb mt
+            left outer join (select
+                                substr(reservation_date, 6, 2) as id,
+                                doctor_id,
+                                count(*) as count
+                            from
+                                reservation_tb
+                            where
+                                year(reservation_date) = #{year}
+                            group by
+                                doctor_id,
+                                substr(reservation_date, 6, 2)
+                            order by doctor_id) rt on(rt.id = mt.id and dt.id = rt.doctor_id)
+            left outer join user_tb ut on(ut.id = dt.user_id)
+        where
+            dt.id = #{doctorId}
+        order by
+            doctor_id,
+            month
+    </select>
+
+    <select id="weekReservationCount" resultMap="weekReservationCountMap">
+        with temp_week_tb as (
+            select 1 as id, date_sub(curdate(), interval weekday(curdate()) day) as day union all
+            select 2, date_add(date_sub(curdate(), interval weekday(curdate()) day), interval 1 DAY) union all
+            select 3, date_add(date_sub(curdate(), interval weekday(curdate()) day), interval 2 DAY) union all
+            select 4, date_add(date_sub(curdate(), interval weekday(curdate()) day), interval 3 DAY) union all
+            select 5, date_add(date_sub(curdate(), interval weekday(curdate()) day), interval 4 DAY)
+        )
+        select
+            twt.id as id,
+            twt.day as name,
+            case
+                when twt.id = 1 then rpad(count(rt.id), 5, 0)
+                when twt.id = 2 then lpad(rpad(count(rt.id), 4, 0), 5, 0)
+                when twt.id = 3 then lpad(rpad(count(rt.id), 3, 0), 5, 0)
+                when twt.id = 4 then lpad(rpad(count(rt.id), 2, 0), 5, 0)
+                when twt.id = 5 then lpad(count(rt.id), 5, 0)
+            end as count
+        from
+            temp_week_tb twt
+            left outer join reservation_tb rt on date(rt.reservation_date) = twt.day
+        where
+            weekday(curdate()) &lt; 5
+        group by
+            twt.id
+        order by
+            twt.id;
+    </select>
+
+    <select id="yearList" resultType="com.project.doctor_fish_back.dto.admin.response.reservation.RespYearDto">
+        with recursive year_list as (
+            select year(curdate()) as year
+            union all
+            select year - 1
+            from year_list
+            where year > year("2022-01-01")
+        )
+        select
+            row_number() over (order by year) as id,
+            year
+        from
+            year_list
+        order by
+            year desc;
+    </select>
+
+    <select id="monthReservationCount" resultMap="monthReservationCountMap">
+        select
+            mt.id as id,
+            ifnull(count, 0) as count
+        from
+            month_tb mt
+            left outer join (select
+                                substr(reservation_date, 6, 2) as id,
+                                count(*) as count
+                            from
+                                reservation_tb
+                            where
+                                year(reservation_date) = #{year}
+                            group by
+                                substr(reservation_date, 6, 2)) rt on(rt.id = mt.id)
+        order by
+            id
+    </select>
+
+</mapper>

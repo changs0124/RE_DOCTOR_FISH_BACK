@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.project.doctor_fish_back.repository.user.UserCommentMapper">
+
+    <resultMap id="findCommentsByUserIdResultMap" type="com.project.doctor_fish_back.entity.Review">
+        <id property="id" column="review_id" />
+        <result property="content" column="review_content" />
+        <result property="userName" column="writer_name" />
+        <result property="userImg" column="writer_img" />
+        <collection property="comment" javaType="java.util.List" resultMap="commentResultMap" />
+    </resultMap>
+
+    <resultMap id="commentResultMap" type="com.project.doctor_fish_back.entity.Comment">
+        <id property="id" column="comment_id" />
+        <result property="userId" column="user_id" />
+        <result property="content" column="content" />
+        <result property="registerDate" column="register_date" />
+        <result property="updateDate" column="update_date" />
+        <association property="user" resultMap="userResultMap" />
+    </resultMap>
+
+    <resultMap id="userResultMap" type="com.project.doctor_fish_back.entity.User">
+        <id property="id" column="user_id" />
+        <result property="name" column="username" />
+        <result property="img" column="userImg" />
+    </resultMap>
+
+    <insert id="save">
+        insert into comment_tb
+        values(default, #{reviewId}, #{userId}, #{content}, now(), now())
+    </insert>
+
+    <update id="modifyById">
+        update comment_tb
+        set
+            content = #{content},
+            update_date = now()
+        where
+            id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        delete
+        from
+            comment_tb
+        where
+            id = #{id}
+    </delete>
+
+    <delete id="deleteCommentsByReviewId">
+        delete
+        from
+            comment_tb
+        where
+            review_id = #{reviewId}
+    </delete>
+
+    <select id="findById" resultType="com.project.doctor_fish_back.entity.Comment">
+        select
+            ct.id,
+            ct.review_id as reviewId,
+            ct.user_id as userId,
+            ct.content,
+            ct.register_date as registerDate,
+            ct.update_date as updateDate,
+            ut.name as userName,
+            ut.img as userImg
+        from
+            comment_tb ct
+            left outer join user_tb ut on(ct.user_id = ut.id)
+        where
+            ct.id = #{id}
+    </select>
+
+    <select id="commentListByReviewId" resultType="com.project.doctor_fish_back.entity.Comment">
+        select
+            ct.id,
+            ct.review_id as reviewId,
+            ct.user_id as userId,
+            ct.content,
+            ct.register_date as registerDate,
+            ct.update_date as updateDate,
+            ut.name as userName,
+            ut.img as userImg
+        from
+            comment_tb ct
+            left outer join user_tb ut on(ct.user_id = ut.id)
+        where
+            review_id = #{reviewId}
+        order by
+            registerDate desc
+        limit #{startIndex}, #{limit}
+    </select>
+
+    <select id="commentCountByReviewId" resultType="java.lang.Long">
+        select
+            count(*)
+        from
+            comment_tb
+        where
+            review_id = #{reviewId}
+    </select>
+
+    <select id="commentListByUserId" resultMap="findCommentsByUserIdResultMap">
+        select
+            rt.id as review_id,
+            rt.content as review_content,
+            (select ut.name from review_tb rt left join user_tb ut on(rt.user_id = ut.id) where rt.id = ct.review_id) as writer_name,
+            (select ut.img from review_tb rt left join user_tb ut on(rt.user_id = ut.id) where rt.id = ct.review_id) as writer_img,
+            ct.id as comment_id,
+            ct.content as content,
+            ct.register_date as register_date,
+            ct.update_date as update_date,
+            ut.id as user_id,
+            ut.name as username,
+            ut.img as userImg
+        from
+            review_tb rt
+            left outer join comment_tb ct on (rt.id = ct.review_id)
+            left outer join user_tb ut on(ct.user_id = ut.id)
+        where
+            ct.user_id = #{userId};
+    </select>
+
+    <select id="commentCountByUserId" resultType="java.lang.Long">
+        select
+            count(*)
+        from
+            comment_tb
+        where
+            user_id = #{userId}
+    </select>
+
+</mapper>
