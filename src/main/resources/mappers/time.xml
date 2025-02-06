@@ -7,11 +7,26 @@
 <mapper namespace="com.project.doctor_fish_back.repository.TimeMapper">
 
     <select id="timeList" resultType="com.project.doctor_fish_back.entity.Time">
+<!--        select-->
+<!--            id,-->
+<!--            time-->
+<!--        from-->
+<!--            time_tb-->
+
         select
             id,
             time
-        from
-            time_tb
+        from (values
+            (1, '09:00'),
+            (2, '10:00'),
+            (3, '11:00'),
+            (4, '12:00'),
+            (5, '14:00'),
+            (6, '15:00'),
+            (7, '16:00'),
+            (8, '17:00'),
+            (9, '18:00')
+        ) as time_tb(id, time);
     </select>
 
     <select id="reservedTimeList" resultType="com.project.doctor_fish_back.entity.Time">
@@ -48,18 +63,20 @@
 <!--                                                            and lt.status = 2-->
 <!--                                                            and lt.leave_date like concat(#{reservationDate}, "%"));-->
 
-        select time_tb.id, time_tb.time
-        from (
-            SELECT 1 AS id, '09:00' AS time
-            UNION ALL SELECT 2, '10:00'
-            UNION ALL SELECT 3, '11:00'
-            UNION ALL SELECT 4, '12:00'
-            UNION ALL SELECT 5, '13:00'
-            UNION ALL SELECT 6, '14:00'
-            UNION ALL SELECT 7, '15:00'
-            UNION ALL SELECT 8, '16:00'
-            UNION ALL SELECT 9, '17:00'
-            ) as time_tb
+        select
+            id,
+            time
+        from (values
+            (1, '09:00'),
+            (2, '10:00'),
+            (3, '11:00'),
+            (4, '12:00'),
+            (5, '14:00'),
+            (6, '15:00'),
+            (7, '16:00'),
+            (8, '17:00'),
+            (9, '18:00')
+            ) as time_tb(id, time)
         where
             CAST(substr(time, 1, 2) AS UNSIGNED) in(select
                                                         hour(reservation_date)
